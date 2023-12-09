@@ -4,3 +4,4 @@ pandas
 pillow
 datetime
 APScheduler==3.8.1
+gunicorn
