@@ -3,6 +3,6 @@ plotly.express
 pandas
 pillow
 datetime
-pytz
+pytz==2021.3
 APScheduler==3.8.1
 gunicorn
