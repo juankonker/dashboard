@@ -3,7 +3,7 @@ plotly.express
 pandas
 pillow
 datetime
-apscheduler.schedulers.background
+APScheduler==3.8.1
 random
 ibase64
 io
