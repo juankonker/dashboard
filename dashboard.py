@@ -9,7 +9,6 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import random
 import base64
 from io import BytesIO
-from pytz import utc
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -124,7 +123,7 @@ def dashboard_layout():
                          'color': 'white',
                      },
                      children=[
-                         html.Img(src=Image.open("dashboard.png"), style={'height': '15%', 'width': '70%'}),
+                         html.Img(src=Image.open("dashboard.png"), style={'height': '15%', 'width': '90%'}),
                          html.A(
                              html.Button("Download Data", id="download-button"),
                              id="download-link",
