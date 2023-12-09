@@ -1,0 +1,9 @@
+dash
+plotly.express
+pandas
+pillow
+datetime
+apscheduler.schedulers.background
+random
+ibase64
+io
