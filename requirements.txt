@@ -4,6 +4,5 @@ pandas
 pillow
 datetime
 APScheduler==3.8.1
-random
 ibase64
 io
