@@ -4,12 +4,19 @@ import pandas as pd
 from PIL import Image
 from dash import callback, Input, Output, State
 import os
-from datetime import datetime, timezone
+from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 import random
 import base64
 from io import BytesIO
-import tzlocal
+
+# Ajuste da versão do tzlocal
+try:
+    import tzlocal
+except ImportError:
+    print("tzlocal não instalado. Instalando agora...")
+    os.system("pip install tzlocal==2.1")
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -144,7 +151,7 @@ def dashboard_layout():
                     dash_table.DataTable(
                         id='table-virtualization',
                         columns=[
-                            {'name': 'Medição', 'id': 'Medição'},
+                            {'name': 'Measurement', 'id': 'Medição'},
                             {'name': 'Mass (1000 x kg)', 'id': 'Mass (1000 x kg)'},
                             {'name': 'Temperature (°C)', 'id': 'Temperature (°C)'},
                             {'name': 'Current Time', 'id': 'Current Time'}
@@ -233,7 +240,7 @@ def download_data(n_clicks):
         return f"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{excel_b64}"
 
 # Start the scheduler
-scheduler.add_job(update_data, 'interval', seconds=60)
+scheduler.add_job(update_data, IntervalTrigger(seconds=60), id='update_data_job')
 scheduler.start()
 
 if __name__ == '__main__':
