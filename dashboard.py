@@ -3,20 +3,23 @@ import plotly.express as px
 import pandas as pd
 from PIL import Image
 from dash import callback, Input, Output, State
-import os
-from datetime import datetime
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.interval import IntervalTrigger
 import random
 import base64
 from io import BytesIO
+from apscheduler.schedulers.background import BackgroundScheduler
+import tzlocal
+from packaging import version
+import os
 
 # Ajuste da versão do tzlocal
 try:
-    import tzlocal
-except ImportError:
-    print("tzlocal não instalado. Instalando agora...")
-    os.system("pip install tzlocal==2.1")
+    tz_version = version.parse(tzlocal.__version__)
+    if tz_version.major >= 3:
+        print("Versão incompatível do tzlocal. Instalando agora a versão 2.1...")
+        os.system("pip install tzlocal==2.1")
+except AttributeError:
+    # Se não houver atributo __version__, assume-se que a versão seja compatível
+    pass
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -25,14 +28,14 @@ app = Dash(__name__, external_stylesheets=external_stylesheets, suppress_callbac
 server = app.server
 
 # Dicionário para armazenar dados
-data_dict = {'Medição': [], 'Mass (1000 x kg)': [], 'Temperature (°C)': [], 'Current Time': []}
+data_dict = {'Measurement': [], 'Mass (1000 x kg)': [], 'Temperature (°C)': [], 'Current Time': []}
 
 # Sample data
-dt = {"Medição": [1, 2, 3, 4, 5, 6, 7, 8],
+dt = {"Measurement": [1, 2, 3, 4, 5, 6, 7, 8],
       "Mass (1000 x kg)": [4, 12, 13, 10, 15, 11, 10, 16]}
 
 df = pd.DataFrame(dt)
-fig = px.line(df, x="Medição", y="Mass (1000 x kg)", markers=True, template='plotly_dark',
+fig = px.line(df, x="Measurement", y="Mass (1000 x kg)", markers=True, template='plotly_dark',
               width=1000, height=350, title="Real time ore pile mass")
 
 # Start the scheduler for updating data every 1 minute
@@ -48,14 +51,14 @@ def update_data():
     temperature = get_temperature()
     random_mass = random.uniform(5, 20)  # Gerar um valor aleatório entre 5 e 20
 
-    # Verifica se a lista 'Medição' está vazia
-    if data_dict['Medição']:
-        next_time = max(data_dict['Medição']) + 1
+    # Verifica se a lista 'Measurement' está vazia
+    if data_dict['Measurement']:
+        next_time = max(data_dict['Measurement']) + 1
     else:
         next_time = 1
 
     # Append new data to the dictionary
-    data_dict['Medição'].append(next_time)
+    data_dict['Measurement'].append(next_time)
     data_dict['Mass (1000 x kg)'].append(random_mass)
     data_dict['Temperature (°C)'].append(temperature)
     data_dict['Current Time'].append(current_time)
@@ -70,7 +73,7 @@ def update_data_and_graph(n_intervals):
 
     # Atualizar o gráfico com as novas informações
     new_fig = px.line(pd.DataFrame(data_dict),
-                      x="Medição", y="Mass (1000 x kg)",
+                      x="Measurement", y="Mass (1000 x kg)",
                       markers=True, template='plotly_dark',
                       width=1000, height=350, title="Real time ore pile mass")
 
@@ -88,93 +91,6 @@ def update_data_and_graph(n_intervals):
     new_fig.update_traces(line=dict(color='black'))
 
     return pd.DataFrame(data_dict).to_dict('records'), new_fig
-
-def login_layout():
-    return html.Div(
-        children=[
-            html.Div(id='login-container', className='login-container', children=[
-                html.Div(children=[
-                    html.Img(src=pil_img, style={'height': '20%', 'width': '20%'}),
-                    html.H1(children=' Medição de minérios de forma sustentável e inovadora.',
-                            style={'color': '#333', 'margin-bottom': '20px'}),
-                ]),
-
-                html.Div(id='login-form-container', className='login-form-container', children=[
-                    html.Label('Email:', className='login-label'),
-                    dcc.Input(id='email-input', type='email', value='', placeholder='Enter your email',
-                              className='login-input', style={'width': '100%'}),
-                    html.Label('Password:', className='login-label'),
-                    dcc.Input(id='password-input', type='password', value='', placeholder='Enter your password',
-                              className='login-input', style={'width': '100%'}, autoComplete='current-password'),
-                    html.Button('Entrar', id='login-button', className='login-button'),
-                    html.Div(id='login-output', className='login-output'),
-                ]),
-            ]),
-        ],
-        className='login-page',
-        style={'height': '100vh', 'display': 'flex', 'flex-direction': 'column', 'align-items': 'center',
-               'justify-content': 'center'}
-    )
-
-def dashboard_layout():
-    return html.Div(
-        children=[
-            html.Div(id='sidebar', className='sidebar',
-                     style={
-                         'position': 'fixed',
-                         'top': 0,
-                         'left': 0,
-                         'width': '250px',
-                         'height': '100%',
-                         'background-color': 'black',
-                         'padding': '20px',
-                         'color': 'white',
-                     },
-                     children=[
-                         html.Img(src=Image.open("dashboard.png"), style={'height': '15%', 'width': '90%'}),
-                         html.A(
-                             html.Button("Download Data", id="download-button"),
-                             id="download-link",
-                             download="data.xlsx",
-                             href="",
-                             target="_blank",
-                             style={'margin-top': '20px'}
-                         ),
-                         # Adicione mais conteúdo à barra lateral conforme necessário
-                     ],
-            ),
-            html.Div(
-                id='info-container',
-                className='info-container',
-                style={'flex': 1, 'margin-left': '250px'},  # Mover a tabela e o gráfico para a direita
-                children=[
-                    dash_table.DataTable(
-                        id='table-virtualization',
-                        columns=[
-                            {'name': 'Measurement', 'id': 'Medição'},
-                            {'name': 'Mass (1000 x kg)', 'id': 'Mass (1000 x kg)'},
-                            {'name': 'Temperature (°C)', 'id': 'Temperature (°C)'},
-                            {'name': 'Current Time', 'id': 'Current Time'}
-                        ],
-                        data=pd.DataFrame(data_dict).to_dict('records'),
-                        style_cell={'textAlign': 'center', 'minWidth': '100px', 'font_size': '18px',
-                                    'font_family': 'Arial, sans-serif'},
-                        style_table={'height': 250, 'width': 1000, 'overflowY': 'auto'},
-                        fixed_rows={'headers': True, 'data': 0},  # Torna apenas os headers fixos
-                        virtualization=True,
-                        page_action='none',
-                        style_header={'backgroundColor': 'lightgreen', 'color': 'black', 'font_size': '20px',
-                                      'font_family': 'Arial, sans-serif'},
-                        style_as_list_view=True
-                    ),
-                    dcc.Graph(id='example-graph', figure=fig),
-                ],
-            ),
-        ],
-        className='dashboard-page',
-        style={'display': 'flex', 'flex-direction': 'column', 'align-items': 'center', 'justify-content': 'center',
-               'margin-top': '20px'}
-    )
 
 # Inline CSS styles
 app.layout = html.Div(children=[
@@ -240,7 +156,7 @@ def download_data(n_clicks):
         return f"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{excel_b64}"
 
 # Start the scheduler
-scheduler.add_job(update_data, IntervalTrigger(seconds=60), id='update_data_job')
+scheduler.add_job(update_data, 'interval', seconds=60)
 scheduler.start()
 
 if __name__ == '__main__':
