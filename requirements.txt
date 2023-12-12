@@ -1,9 +1,10 @@
-dash
+dash==1.21.0
+plotly==4.14.3
 plotly.express
-pandas
-pillow
-datetime
-APScheduler==3.8.1
-pyowm
+pandas==1.3.3
+APScheduler==3.9.0
+pyowm==3.3.0
+Pillow==8.4.0
 numpy
-gunicorn
+datetime
+gunicorn==20.1.0
