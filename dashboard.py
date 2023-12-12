@@ -3,26 +3,13 @@ import plotly.express as px
 import pandas as pd
 from PIL import Image
 from dash import callback, Input, Output, State
-import os
 from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-import random
+import pyowm
 import base64
 from io import BytesIO
-import tzlocal
-from packaging import version
-import os
-
-# Ajuste da versão do tzlocal
-try:
-    tz_version = version.parse(tzlocal.__version__)
-    if tz_version.major >= 3:
-        print("Versão incompatível do tzlocal. Instalando agora a versão 2.1...")
-        os.system("pip install tzlocal==2.1")
-except AttributeError:
-    # Se não houver atributo __version__, assume-se que a versão seja compatível
-    pass
+import numpy as np
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -30,38 +17,42 @@ pil_img = Image.open("logo-blavk.png")
 app = Dash(__name__, external_stylesheets=external_stylesheets, suppress_callback_exceptions=True)
 server = app.server
 
+owm = pyowm.OWM('fa47fceaf9e211df22cedbb5c4f2b456')  # Substitua pela sua chave real do OWM
+mgr = owm.weather_manager()
+
 # Dicionário para armazenar dados
-data_dict = {'Medição': [], 'Mass (1000 x kg)': [], 'Temperature (°C)': [], 'Current Time': []}
+data_dict = {'Measurement': [], 'Mass (1000 x kg)': [], 'Temperature (°C)': [], 'Current Time': []}
 
 # Sample data
-dt = {"Medição": [1, 2, 3, 4, 5, 6, 7, 8],
+dt = {"Measurement": [1, 2, 3, 4, 5, 6, 7, 8],
       "Mass (1000 x kg)": [4, 12, 13, 10, 15, 11, 10, 16]}
 
 df = pd.DataFrame(dt)
-fig = px.line(df, x="Medição", y="Mass (1000 x kg)", markers=True, template='plotly_dark',
-              width=1000, height=350, title="Real time ore pile mass")
+fig = px.line(df, x="Measurement", y="Mass (1000 x kg)", markers=True, template='plotly_dark',
+              width=1000, height=350, title="Real-time ore pile mass")
 
 # Start the scheduler for updating data every 1 minute
-scheduler = BackgroundScheduler(timezone='UTC')
+scheduler = BackgroundScheduler()
 
 def get_temperature():
-    # Replace this with your actual logic to get real-time temperature data
-    return round(25 + (datetime.now().second / 60), 2)
+    observation = mgr.weather_at_place("Belo Horizonte,BR")
+    w = observation.weather
+    return w.temperature('celsius')['temp']
 
 def update_data():
     # Update data_dict with current time, temperature, and random Mass values
     current_time = datetime.now().strftime("%H:%M:%S")
     temperature = get_temperature()
-    random_mass = random.uniform(5, 20)  # Gerar um valor aleatório entre 5 e 20
+    random_mass = np.random.uniform(5, 20)  # Substitua isso pelo seu método real de obtenção de massa aleatória
 
-    # Verifica se a lista 'Medição' está vazia
-    if data_dict['Medição']:
-        next_time = max(data_dict['Medição']) + 1
+    # Verifica se a lista 'Measurement' está vazia
+    if data_dict['Measurement']:
+        next_time = max(data_dict['Measurement']) + 1
     else:
         next_time = 1
 
     # Append new data to the dictionary
-    data_dict['Medição'].append(next_time)
+    data_dict['Measurement'].append(next_time)
     data_dict['Mass (1000 x kg)'].append(random_mass)
     data_dict['Temperature (°C)'].append(temperature)
     data_dict['Current Time'].append(current_time)
@@ -76,9 +67,9 @@ def update_data_and_graph(n_intervals):
 
     # Atualizar o gráfico com as novas informações
     new_fig = px.line(pd.DataFrame(data_dict),
-                      x="Medição", y="Mass (1000 x kg)",
+                      x="Measurement", y="Mass (1000 x kg)",
                       markers=True, template='plotly_dark',
-                      width=1000, height=350, title="Real time ore pile mass")
+                      width=1000, height=350, title="Real-time ore pile mass")
 
     # Altera a cor de fundo do novo gráfico para verde claro e o texto para preto
     new_fig.update_layout(plot_bgcolor='lightgreen', paper_bgcolor='lightgreen', font_color='black')
@@ -106,12 +97,6 @@ def login_layout():
                 ]),
 
                 html.Div(id='login-form-container', className='login-form-container', children=[
-                    html.Label('Email:', className='login-label'),
-                    dcc.Input(id='email-input', type='email', value='', placeholder='Enter your email',
-                              className='login-input', style={'width': '100%'}),
-                    html.Label('Password:', className='login-label'),
-                    dcc.Input(id='password-input', type='password', value='', placeholder='Enter your password',
-                              className='login-input', style={'width': '100%'}, autoComplete='current-password'),
                     html.Button('Entrar', id='login-button', className='login-button'),
                     html.Div(id='login-output', className='login-output'),
                 ]),
@@ -137,7 +122,9 @@ def dashboard_layout():
                          'color': 'white',
                      },
                      children=[
-                         html.Img(src=Image.open("dashboard.png"), style={'height': '15%', 'width': '90%'}),
+                         html.Img(src=Image.open("dashboard.png"), style={'height': '20%', 'width': '110%'}),
+                         html.H3(f"Welcome,", style={'font-size': '20px'}),
+                         html.H4("Guest", style={'font-size': '17px'}),  # Placeholder for the user's name
                          html.A(
                              html.Button("Download Data", id="download-button"),
                              id="download-link",
@@ -146,7 +133,7 @@ def dashboard_layout():
                              target="_blank",
                              style={'margin-top': '20px'}
                          ),
-                         # Adicione mais conteúdo à barra lateral conforme necessário
+                         # Add more content to the sidebar as needed
                      ],
             ),
             html.Div(
@@ -157,7 +144,7 @@ def dashboard_layout():
                     dash_table.DataTable(
                         id='table-virtualization',
                         columns=[
-                            {'name': 'Measurement', 'id': 'Medição'},
+                            {'name': 'Measurement', 'id': 'Measurement'},
                             {'name': 'Mass (1000 x kg)', 'id': 'Mass (1000 x kg)'},
                             {'name': 'Temperature (°C)', 'id': 'Temperature (°C)'},
                             {'name': 'Current Time', 'id': 'Current Time'}
@@ -202,25 +189,15 @@ app.layout = html.Div(children=[
 @app.callback(
     [Output('login-output', 'children'),
      Output('url', 'pathname')],
-    [Input('login-button', 'n_clicks')],
-    [State('email-input', 'value'),
-     State('password-input', 'value')]
+    [Input('login-button', 'n_clicks')]
 )
-def handle_login(n_clicks, email, password):
+def handle_login(n_clicks):
     # Replace with your actual authentication logic
-    valid_email = 'test@example.com'
-    valid_password = 'password123'
-
-    login_output = ''
-
+    # No lógica de autenticação aqui, apenas redireciona para o dashboard ao clicar no botão
     if n_clicks is not None:
-        if email == valid_email and password == valid_password:
-            login_output = 'Login successful!'
-            return login_output, '/dashboard'
-        else:
-            login_output = 'Login failed. Please check your email and password.'
+        return 'Login successful!', '/dashboard'
 
-    return login_output, '/'
+    return '', '/'
 
 # Callback to display the appropriate page based on the URL
 @app.callback(Output('page-content', 'children'),
