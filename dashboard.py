@@ -45,7 +45,7 @@ def update_data():
     new_time=current_time_zero - timedelta(hours=3)
     current_time = new_time.strftime("%H:%M:%S")
     temperature = get_temperature()
-    random_mass = np.random.uniform(5, 20)  # Substitua isso pelo seu método real de obtenção de massa aleatória
+    random_mass = round(np.random.uniform(5, 20), 2)  # Substitua isso pelo seu método real de obtenção de massa aleatória
 
     # Verifica se a lista 'Measurement' está vazia
     if data_dict['Measurement']:
