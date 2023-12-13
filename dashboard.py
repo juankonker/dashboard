@@ -222,7 +222,8 @@ def download_data(n_clicks):
         df.to_excel(excel_buffer, index=False)
         excel_buffer.seek(0)
         excel_b64 = base64.b64encode(excel_buffer.read()).decode()
-        return f"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{excel_b64}"
+        href_value = f"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{excel_b64}"
+        return href_value
 
 # Start the scheduler
 scheduler.add_job(update_data, IntervalTrigger(seconds=60), id='update_data_job')
