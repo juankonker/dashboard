@@ -3,7 +3,7 @@ import plotly.express as px
 import pandas as pd
 from PIL import Image
 from dash import callback, Input, Output, State
-from datetime import datetime
+from datetime import datetime, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 import pyowm
@@ -41,7 +41,9 @@ def get_temperature():
 
 def update_data():
     # Update data_dict with current time, temperature, and random Mass values
-    current_time = datetime.now().strftime("%H:%M:%S")
+    current_time_zero=datetime.now()
+    new_time=current_time_zero - timedelta(hours=3)
+    current_time = new_time.strftime("%H:%M:%S")
     temperature = get_temperature()
     random_mass = np.random.uniform(5, 20)  # Substitua isso pelo seu método real de obtenção de massa aleatória
 
