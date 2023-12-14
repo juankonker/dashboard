@@ -10,33 +10,12 @@ import pyowm
 import base64
 from io import BytesIO
 import numpy as np
-from dash import Dash, html, dcc, dash_table, callback, Input, Output, State
-from dash.dependencies import Input, Output, State
-from flask import Flask, session, redirect, request
-from authlib.integrations.flask_client import OAuth
-import os
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 pil_img = Image.open("logo-blavk.png")
-server = Flask(__name__)
-app = Dash(__name__, server=server,external_stylesheets=external_stylesheets, suppress_callback_exceptions=True)
-
-# Configuração do OAuth
-oauth = OAuth(server)
-azure = oauth.register(
-    'azure',
-    client_id='24e5327b-7c5e-41a9-b583-812c4c6f407a',
-    client_secret='7990c394-a8ab-40ff-afb4-a416f1e9b5ce',
-    authorize_url='https://login.microsoftonline.com/9c23551b-bd35-484a-877e-a6571b4d8aac/oauth2/v2.0/authorize',
-    authorize_params=None,
-    authorize_kwargs=None,
-    access_token_url='https://login.microsoftonline.com/9c23551b-bd35-484a-877e-a6571b4d8aac/oauth2/v2.0/token',
-    access_token_params=None,
-    refresh_token_url=None,
-    redirect_uri='https://dashboard-konker-anglo.onrender.com/dashboard',
-    client_kwargs={'scope': 'User.Read'},
-)
+app = Dash(__name__, external_stylesheets=external_stylesheets, suppress_callback_exceptions=True)
+server = app.server
 
 owm = pyowm.OWM('fa47fceaf9e211df22cedbb5c4f2b456')  # Substitua pela sua chave real do OWM
 mgr = owm.weather_manager()
@@ -199,8 +178,6 @@ def dashboard_layout():
 
 # Inline CSS styles
 app.layout = html.Div(children=[
-    html.Button("Login com Microsoft", id="login-button"),
-    html.Div(id='login-output'),
     dcc.Location(id='url', refresh=False),
     dcc.Interval(
         id='interval-component',
@@ -215,38 +192,28 @@ app.layout = html.Div(children=[
     html.Div(id='page-content', style={'max-width': '800px', 'margin': '0 auto'})
 ])
 
-# Callback para lidar com o login
+# Callback for handling login
 @app.callback(
-    Output('login-output', 'children'),
-    [Input('login-button', 'n_clicks')],
-    prevent_initial_call=True
+    [Output('login-output', 'children'),
+     Output('url', 'pathname')],
+    [Input('login-button', 'n_clicks')]
 )
 def handle_login(n_clicks):
-    if n_clicks:
-        return 'Login successful!'
-    return ''
+    # Replace with your actual authentication logic
+    # No lógica de autenticação aqui, apenas redireciona para o dashboard ao clicar no botão
+    if n_clicks is not None:
+        return 'Login successful!', '/dashboard'
 
-# Rota para o login
-@app.server.route('/login')
-def login():
-    redirect_uri = url_for('authorized', _external=True)
-    return azure.authorize_redirect(redirect_uri)
+    return '', '/'
 
-# Rota para a autorização
-@app.server.route('/login/authorized')
-def authorized():
-    token = azure.authorize_access_token()
-    user = azure.parse_id_token(token)
-    session['user'] = user
-    return redirect('/dashboard')
-
-# Página de dashboard protegida
-@app.server.route('/dashboard')
-def dashboard():
-    user = session.get('user')
-    if user is None:
-        return redirect('/')
-    return f"Bem-vindo, {user['name']}! Este é o dashboard."
+# Callback to display the appropriate page based on the URL
+@app.callback(Output('page-content', 'children'),
+              [Input('url', 'pathname')])
+def display_page(pathname):
+    if pathname == '/dashboard':
+        return dashboard_layout()
+    else:
+        return login_layout()
 
 # Callback to update the data download link
 @app.callback(
