@@ -223,7 +223,7 @@ app.layout = html.Div(children=[
 )
 def handle_login(n_clicks):
     if n_clicks:
-        return redirect('/login')
+        return 'Login successful!'
     return ''
 
 # Rota para o login
