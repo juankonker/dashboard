@@ -135,6 +135,11 @@ def dashboard_layout():
                              target="_blank",
                              style={'margin-top': '20px'}
                          ),
+                         html.A(
+                             html.Button("Logout", id="logout-button"),
+                             href="/",  # Redirects to the login page
+                             style={'margin-top': '20px'}
+                         ),
                          # Add more content to the sidebar as needed
                      ],
             ),
@@ -222,8 +227,7 @@ def download_data(n_clicks):
         df.to_excel(excel_buffer, index=False)
         excel_buffer.seek(0)
         excel_b64 = base64.b64encode(excel_buffer.read()).decode()
-        href_value = f"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{excel_b64}"
-        return href_value
+        return f"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{excel_b64}"
 
 # Start the scheduler
 scheduler.add_job(update_data, IntervalTrigger(seconds=60), id='update_data_job')
