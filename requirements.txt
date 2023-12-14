@@ -19,3 +19,4 @@ nest-asyncio==1.5.8
 importlib-metadata==7.0.0
 tenacity==8.2.3
 plotly.express==0.4.1
+authlib
