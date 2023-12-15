@@ -20,7 +20,7 @@ def login_required(func):
 
 blueprint = make_azure_blueprint(
     client_id="832378f7-5fee-4713-af36-a88afc95c134",
-    client_secret="ad68cc32-f012-47cd-86ff-d22c8713b658",
+    client_secret="add431f1-e527-48ec-9b5c-049eaddb9ec1",
     tenant="6495f1e2-0d47-4be2-826d-bef88fc09df3",
     scope=["openid", "email", "profile"],
 )
